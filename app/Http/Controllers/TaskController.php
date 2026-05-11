@@ -33,12 +33,6 @@ class TaskController extends Controller
             ->with('success', 'Task created successfully!');
     }
 
-    public function edit(Task $task)
-    {
-        $this->authorize('update', $task);
-        return view('tasks.edit', compact('task'));
-    }
-
     public function update(Request $request, Task $task)
     {
         $this->authorize('update', $task);
