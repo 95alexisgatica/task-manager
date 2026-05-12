@@ -7,15 +7,20 @@ use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $tasks = auth()->user()->tasks()->latest()->get();
-        return view('tasks.index', compact('tasks'));
-    }
+        $categories = auth()->user()->categories()->get();
 
-    public function create()
-    {
-        return view('tasks.create');
+        $query = auth()->user()->tasks()->with('category')->latest();
+
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
+
+        $tasks = $query->get();
+        $currentCategory = $request->category;
+
+        return view('tasks.index', compact('tasks', 'categories', 'currentCategory'));
     }
 
     public function store(Request $request)
@@ -25,6 +30,7 @@ class TaskController extends Controller
             'description' => 'nullable|string',
             'status'      => 'required|in:pending,in_progress,completed',
             'due_date'    => 'nullable|date',
+            'category_id' => 'nullable|exists:categories,id',
         ]);
 
         auth()->user()->tasks()->create($validated);

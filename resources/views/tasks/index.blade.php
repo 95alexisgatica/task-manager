@@ -11,6 +11,7 @@
     </x-slot>
 
     @include('tasks._modal')
+    @include('tasks._category_modal')
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -20,6 +21,32 @@
                     {{ session('success') }}
                 </div>
             @endif
+
+            {{-- Pestañas de categorías --}}
+            <div class="mb-4 border-b border-gray-200">
+                <ul class="flex flex-wrap -mb-px text-sm font-medium">
+                    <li class="mr-2">
+                        <a href="{{ route('tasks.index') }}"
+                            class="inline-block p-4 {{ !$currentCategory ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700' }}">
+                            All
+                        </a>
+                    </li>
+                    @foreach ($categories as $category)
+                        <li class="mr-2">
+                            <a href="{{ route('tasks.index', ['category' => $category->id]) }}"
+                                class="inline-block p-4 {{ $currentCategory == $category->id ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700' }}">
+                                {{ $category->name }}
+                            </a>
+                        </li>
+                    @endforeach
+                    <li class="mr-2">
+                        <button onclick="openCategoryModal()"
+                            class="inline-block p-4 text-gray-500 hover:text-gray-700">
+                            + Add Category
+                        </button>
+                    </li>
+                </ul>
+            </div>
 
             @if ($tasks->isEmpty())
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 text-gray-500">
@@ -66,7 +93,8 @@
                                             '{{ addslashes($task->title) }}',
                                             '{{ addslashes($task->description) }}',
                                             '{{ $task->status }}',
-                                            '{{ $task->due_date ? $task->due_date->format('Y-m-d') : '' }}'
+                                            '{{ $task->due_date ? $task->due_date->format('Y-m-d') : '' }}',
+                                            '{{ $task->category_id ?? '' }}'
                                         )"
                                             class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
                                         <form action="{{ route('tasks.destroy', $task) }}" method="POST"

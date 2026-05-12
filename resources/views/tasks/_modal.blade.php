@@ -33,6 +33,17 @@
                 </select>
             </div>
 
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Category</label>
+                <select id="input-category" name="category_id"
+                    class="shadow border rounded w-full py-2 px-3 text-gray-700">
+                    <option value="">No category</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <div class="mb-6">
                 <label class="block text-gray-700 text-sm font-bold mb-2">Due Date</label>
                 <input type="date" id="input-due-date" name="due_date" value="{{ old('due_date') }}"
@@ -56,6 +67,7 @@
 @endif
 
 <script>
+    document.getElementById('input-category').value = '';
     document.addEventListener('DOMContentLoaded', function() {
         window.openModal = function() {
             document.getElementById('modal-title').innerText = 'Create New Task';
@@ -68,7 +80,7 @@
             document.getElementById('modal').classList.remove('hidden');
         }
 
-        window.openEditModal = function(id, title, description, status, dueDate) {
+        window.openEditModal = function(id, title, description, status, dueDate, categoryId) {
             document.getElementById('modal-title').innerText = 'Edit Task';
             document.getElementById('task-form').action = '/tasks/' + id;
             document.getElementById('method-field').innerHTML =
@@ -77,6 +89,7 @@
             document.getElementById('input-description').value = description;
             document.getElementById('input-status').value = status;
             document.getElementById('input-due-date').value = dueDate;
+            document.getElementById('input-category').value = categoryId;
             document.getElementById('modal').classList.remove('hidden');
         }
 
