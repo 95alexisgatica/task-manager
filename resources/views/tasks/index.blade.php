@@ -83,6 +83,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -107,6 +108,21 @@
                                     <td class="px-6 py-4 text-sm text-gray-500">
                                         {{ $task->due_date ? $task->due_date->format('d/m/Y') : '-' }}
                                     </td>
+                                    <td class="px-6 py-4">
+                                        @if ($task->images->count() > 0)
+                                            <div class="flex gap-1 flex-wrap">
+                                                @foreach ($task->images as $image)
+                                                    <a href="{{ asset('storage/' . $image->path) }}" class="glightbox"
+                                                        data-gallery="task-{{ $task->id }}">
+                                                        <img src="{{ asset('storage/' . $image->path) }}"
+                                                            class="w-12 h-12 object-cover rounded cursor-pointer hover:opacity-80 {{ $image->is_cover ? 'ring-2 ring-blue-500' : '' }}">
+                                                    </a>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <span class="text-gray-400 text-xs">No images</span>
+                                        @endif
+                                    </td>
                                     <td class="px-6 py-4 text-sm">
                                         <button
                                             onclick="openEditModal(
@@ -115,7 +131,8 @@
                                             '{{ addslashes($task->description) }}',
                                             '{{ $task->status }}',
                                             '{{ $task->due_date ? $task->due_date->format('Y-m-d') : '' }}',
-                                            '{{ $task->category_id ?? '' }}'
+                                            '{{ $task->category_id ?? '' }}',
+                                            {{ $task->images->toJson() }}
                                         )"
                                             class="text-blue-600 hover:text-blue-900 mr-3">Edit</button>
                                         <form action="{{ route('tasks.destroy', $task) }}" method="POST"
@@ -134,5 +151,11 @@
             @endif
         </div>
     </div>
-
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            GLightbox({
+                selector: '.glightbox'
+            });
+        });
+    </script>
 </x-app-layout>

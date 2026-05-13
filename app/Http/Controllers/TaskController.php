@@ -14,7 +14,7 @@ class TaskController extends Controller
     {
         $categories = auth()->user()->categories()->get();
 
-        $query = auth()->user()->tasks()->with('category')->latest();
+        $query = auth()->user()->tasks()->with(['category', 'images'])->latest();
 
         if ($request->filled('category')) {
             $query->where('category_id', $request->category);
@@ -36,19 +36,18 @@ class TaskController extends Controller
             'category_id' => 'nullable|exists:categories,id',
         ]);
 
-        auth()->user()->tasks()->create($validated);
+        $task = auth()->user()->tasks()->create($validated);
 
-        return redirect()->route('tasks.index')
-            ->with('success', 'Task created successfully!');
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'task_id' => $task->id]);
+        }
+
+        return redirect()->route('tasks.index')->with('success', 'Task created!');
     }
 
     public function update(Request $request, Task $task)
     {
         $this->authorize('update', $task);
-
-        $request->merge([
-            'category_id' => $request->category_id ?: null
-        ]);
 
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
@@ -60,8 +59,11 @@ class TaskController extends Controller
 
         $task->update($validated);
 
-        return redirect()->route('tasks.index')
-            ->with('success', 'Task updated successfully!');
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'task_id' => $task->id]);
+        }
+
+        return redirect()->route('tasks.index')->with('success', 'Task updated!');
     }
 
     public function destroy(Task $task)

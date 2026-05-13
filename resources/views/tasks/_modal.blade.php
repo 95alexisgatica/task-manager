@@ -49,7 +49,17 @@
                 <input type="date" id="input-due-date" name="due_date" value="{{ old('due_date') }}"
                     class="shadow border rounded w-full py-2 px-3 text-gray-700">
             </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Images</label>
 
+                {{-- Imágenes existentes --}}
+                <div id="existing-images" class="flex gap-2 flex-wrap mb-2"></div>
+
+                <input type="file" id="input-images" name="images[]" multiple accept="image/*"
+                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <p class="text-xs text-gray-400 mt-1">Max 10 images (2MB each)</p>
+                <div id="image-preview" class="flex gap-2 mt-2 flex-wrap"></div>
+            </div>
             <div class="flex items-center justify-between">
                 <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                     Save Task
@@ -67,34 +77,182 @@
 @endif
 
 <script>
-    document.getElementById('input-category').value = '';
     document.addEventListener('DOMContentLoaded', function() {
+
         window.openModal = function() {
             document.getElementById('modal-title').innerText = 'Create New Task';
-            document.getElementById('task-form').action = '{{ route('tasks.store') }}';
+            document.getElementById('task-form').dataset.taskId = '';
+            document.getElementById('task-form').dataset.mode = 'create';
             document.getElementById('method-field').innerHTML = '';
             document.getElementById('input-title').value = '';
             document.getElementById('input-description').value = '';
             document.getElementById('input-status').value = 'pending';
             document.getElementById('input-due-date').value = '';
+            const cat = document.getElementById('input-category');
+            if (cat) cat.value = '';
+            document.getElementById('image-preview').innerHTML = '';
             document.getElementById('modal').classList.remove('hidden');
         }
 
-        window.openEditModal = function(id, title, description, status, dueDate, categoryId) {
+        window.openEditModal = function(id, title, description, status, dueDate, categoryId, images) {
             document.getElementById('modal-title').innerText = 'Edit Task';
-            document.getElementById('task-form').action = '/tasks/' + id;
-            document.getElementById('method-field').innerHTML =
-                '<input type="hidden" name="_method" value="PUT">';
+            document.getElementById('task-form').dataset.taskId = id;
+            document.getElementById('task-form').dataset.mode = 'edit';
+            document.getElementById('method-field').innerHTML = '';
             document.getElementById('input-title').value = title;
             document.getElementById('input-description').value = description;
             document.getElementById('input-status').value = status;
             document.getElementById('input-due-date').value = dueDate;
-            document.getElementById('input-category').value = categoryId;
+            const cat = document.getElementById('input-category');
+            if (cat) cat.value = categoryId;
+            document.getElementById('image-preview').innerHTML = '';
+
+            // Mostrar imágenes existentes
+            const existingContainer = document.getElementById('existing-images');
+            existingContainer.innerHTML = '';
+            if (images && images.length > 0) {
+                images.forEach(img => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'relative';
+
+                    const image = document.createElement('img');
+                    image.src = '/storage/' + img.path;
+                    image.className = 'w-16 h-16 object-cover rounded cursor-pointer' + (img
+                        .is_cover ? ' ring-2 ring-blue-500' : '');
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.type = 'button';
+                    deleteBtn.innerHTML = '×';
+                    deleteBtn.className =
+                        'absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center';
+                    deleteBtn.onclick = async function() {
+                        const token = document.querySelector('meta[name="csrf-token"]')
+                            .content;
+                        await fetch(`/images/${img.id}`, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            },
+                            body: (() => {
+                                const f = new FormData();
+                                f.append('_token', token);
+                                f.append('_method', 'DELETE');
+                                return f;
+                            })()
+                        });
+                        wrapper.remove();
+                    };
+
+                    wrapper.appendChild(image);
+                    wrapper.appendChild(deleteBtn);
+                    existingContainer.appendChild(wrapper);
+                });
+            }
+
             document.getElementById('modal').classList.remove('hidden');
         }
+
+        // Límite de 10 imágenes
+        document.getElementById('input-images').addEventListener('change', function() {
+            const preview = document.getElementById('image-preview');
+            const existingCount = document.getElementById('existing-images').children.length;
+            const maxNew = 10 - existingCount;
+
+            if (this.files.length > maxNew) {
+                alert(`You can only upload ${maxNew} more image(s). Max total is 10.`);
+                this.value = '';
+                preview.innerHTML = '';
+                return;
+            }
+
+            preview.innerHTML = '';
+            Array.from(this.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'w-16 h-16 object-cover rounded';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
 
         window.closeModal = function() {
             document.getElementById('modal').classList.add('hidden');
         }
+
+        document.getElementById('input-images').addEventListener('change', function() {
+            const preview = document.getElementById('image-preview');
+            preview.innerHTML = '';
+            Array.from(this.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'w-16 h-16 object-cover rounded';
+                    preview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        document.getElementById('task-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const form = this;
+            const mode = form.dataset.mode;
+            const taskId = form.dataset.taskId;
+            const token = document.querySelector('meta[name="csrf-token"]').content;
+
+            const taskData = new FormData();
+            taskData.append('_token', token);
+            taskData.append('title', document.getElementById('input-title').value);
+            taskData.append('description', document.getElementById('input-description').value);
+            taskData.append('status', document.getElementById('input-status').value);
+            taskData.append('due_date', document.getElementById('input-due-date').value);
+            const cat = document.getElementById('input-category');
+            if (cat) taskData.append('category_id', cat.value);
+            if (mode === 'edit') taskData.append('_method', 'PUT');
+
+            const url = mode === 'edit' ? `/tasks/${taskId}` : '/tasks';
+
+            const taskRes = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                body: taskData,
+            });
+
+            const taskJson = await taskRes.json();
+
+            if (!taskJson.success) {
+                alert('Error saving task');
+                return;
+            }
+
+            const imageInput = document.getElementById('input-images');
+            if (imageInput.files.length > 0) {
+                const imageData = new FormData();
+                imageData.append('_token', token);
+                Array.from(imageInput.files).forEach(file => {
+                    imageData.append('images[]', file);
+                });
+
+                await fetch(`/tasks/${taskJson.task_id}/images`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: imageData,
+                });
+            }
+
+            window.location.reload();
+        });
+
     });
 </script>
