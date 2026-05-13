@@ -22,6 +22,19 @@ class CategoryController extends Controller
             ->with('success', 'Category created!');
     }
 
+    public function update(Request $request, Category $category)
+    {
+        $this->authorize('update', $category);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        $category->update($validated);
+
+        return redirect()->back()->with('success', 'Category updated!');
+    }
+
     public function destroy(Category $category)
     {
         $this->authorize('delete', $category);

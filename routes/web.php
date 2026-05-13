@@ -20,6 +20,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    Route::patch('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
 
     Route::resource('tasks', TaskController::class)->except(['show', 'edit', 'create']);
 });

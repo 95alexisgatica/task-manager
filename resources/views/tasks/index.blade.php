@@ -32,11 +32,12 @@
                         </a>
                     </li>
                     @foreach ($categories as $category)
-                        <li class="mr-2">
+                        <li class="mr-2 flex items-center group">
                             <a href="{{ route('tasks.index', ['category' => $category->id]) }}"
                                 class="inline-block p-4 {{ $currentCategory == $category->id ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500 hover:text-gray-700' }}">
                                 {{ $category->name }}
                             </a>
+
                         </li>
                     @endforeach
                     <li class="mr-2">
@@ -46,6 +47,26 @@
                         </button>
                     </li>
                 </ul>
+            </div>
+            <div class="flex items-center gap-3 mb-4">
+                <h1 class="text-2xl font-bold">
+                    {{ $currentCategory ? $categories->where('id', $currentCategory)->first()->name : 'All Tasks' }}
+                </h1>
+                @if ($currentCategory)
+                    @php $cat = $categories->where('id', $currentCategory)->first(); @endphp
+                    <button onclick="openEditCategoryModal({{ $cat->id }}, '{{ addslashes($cat->name) }}')"
+                        class="text-gray-400 hover:text-blue-500">
+                        <x-heroicon-o-pencil class="w-5 h-5" />
+                    </button>
+                    <form action="{{ route('categories.destroy', $cat) }}" method="POST" class="inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" onclick="return confirm('Delete this category?')"
+                            class="text-gray-400 hover:text-red-500">
+                            <x-heroicon-o-trash class="w-5 h-5" />
+                        </button>
+                    </form>
+                @endif
             </div>
 
             @if ($tasks->isEmpty())

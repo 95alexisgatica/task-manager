@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
+    use AuthorizesRequests;
     public function index(Request $request)
     {
         $categories = auth()->user()->categories()->get();
@@ -43,11 +46,16 @@ class TaskController extends Controller
     {
         $this->authorize('update', $task);
 
+        $request->merge([
+            'category_id' => $request->category_id ?: null
+        ]);
+
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
             'status'      => 'required|in:pending,in_progress,completed',
             'due_date'    => 'nullable|date',
+            'category_id' => 'nullable|exists:categories,id',
         ]);
 
         $task->update($validated);

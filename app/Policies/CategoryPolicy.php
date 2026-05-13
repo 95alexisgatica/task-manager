@@ -11,4 +11,9 @@ class CategoryPolicy
     {
         return $user->id === $category->user_id;
     }
+
+    public function update(User $user, Category $category): bool
+    {
+        return $user->id === $category->user_id;
+    }
 }
