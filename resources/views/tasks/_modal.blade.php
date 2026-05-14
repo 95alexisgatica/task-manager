@@ -95,6 +95,7 @@
         }
 
         window.openEditModal = function(id, title, description, status, dueDate, categoryId, images) {
+            if (typeof images === 'string') images = JSON.parse(images);
             document.getElementById('modal-title').innerText = 'Edit Task';
             document.getElementById('task-form').dataset.taskId = id;
             document.getElementById('task-form').dataset.mode = 'edit';
@@ -119,7 +120,15 @@
                     image.src = '/storage/' + img.path;
                     image.className = 'w-16 h-16 object-cover rounded cursor-pointer' + (img
                         .is_cover ? ' ring-2 ring-blue-500' : '');
-
+                    image.onclick = function() {
+                        const lb = GLightbox({
+                            elements: [{
+                                href: '/storage/' + img.path,
+                                type: 'image'
+                            }]
+                        });
+                        lb.open();
+                    };
                     const deleteBtn = document.createElement('button');
                     deleteBtn.type = 'button';
                     deleteBtn.innerHTML = '×';
