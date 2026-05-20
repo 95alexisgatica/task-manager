@@ -1,14 +1,4 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                My Tasks
-            </h2>
-            <button onclick="openModal()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                + New Task
-            </button>
-        </div>
-    </x-slot>
 
     @include('tasks._modal')
     @include('tasks._category_modal')
